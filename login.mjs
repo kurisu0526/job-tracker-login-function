@@ -52,6 +52,10 @@ export async function login(email, password) {
 
     return {
         success: true,
-        token
+        token,
+        user: {
+            name: user.name,
+            email: user.email
+        }
     };
 }
