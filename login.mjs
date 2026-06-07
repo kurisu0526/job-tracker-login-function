@@ -43,7 +43,7 @@ export async function login(email, password) {
 
     const token = jwt.sign(
         {
-            userId: user.PK.replace('USER#', ''),
+            userId: user.pk.replace('USER#', ''),
             email: user.email
         },
         process.env.JWT_SECRET,
