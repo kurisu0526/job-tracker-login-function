@@ -14,49 +14,57 @@ const EMAIL_GSIKEY_SK = 'email_gsi_sk';
 const EMAIL_PREFIX = 'EMAIL#';
 
 export async function login(email, password) {
-    const result = await docClient.send(
-        new QueryCommand({
-            TableName: TABLE_NAME,
-            IndexName: EMAIL_INDEX,
-            KeyConditionExpression: `${EMAIL_GSIKEY} = :email`,
-            ExpressionAttributeValues: {
-                ':email': `${EMAIL_PREFIX}${email.toLowerCase()}`
-            },
-            Limit: 1
-        })
-    );
+    try {
+        const error = new Error('Invalid email or password');
+        error.code = 'LOGIN_FAILED';
 
-    if (!result.Items || result.Items.length === 0) {
-        throw new Error('Invalid email or password');
-    }
+        const result = await docClient.send(
+            new QueryCommand({
+                TableName: TABLE_NAME,
+                IndexName: EMAIL_INDEX,
+                KeyConditionExpression: `${EMAIL_GSIKEY} = :email`,
+                ExpressionAttributeValues: {
+                    ':email': `${EMAIL_PREFIX}${email.toLowerCase()}`
+                },
+                Limit: 1
+            })
+        );
 
-    const user = result.Items[0];
-
-    const passwordMatch = await bcrypt.compare(
-        password,
-        user.passwordHash
-    );
-
-    if (!passwordMatch) {
-        throw new Error('Invalid email or password');
-    }
-
-    const token = jwt.sign(
-        {
-            userId: user.userId,
-            email: user.email
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-    );
-
-    return {
-        success: true,
-        token,
-        user: {
-            name: user.name,
-            email: user.email,
-            userId: user.userId
+        if (!result.Items || result.Items.length === 0) {
+            throw error;
         }
-    };
+
+        const user = result.Items[0];
+
+        const passwordMatch = await bcrypt.compare(
+            password,
+            user.passwordHash
+        );
+
+        if (!passwordMatch) {
+            throw error;
+        }
+
+        const token = jwt.sign(
+            {
+                userId: user.userId,
+                email: user.email
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        return {
+            success: true,
+            token,
+            user: {
+                name: user.name,
+                email: user.email,
+                userId: user.userId
+            }
+        };
+    } catch (err) {
+        console.error("Error during login: ", err.message);
+        throw err;
+    }
 }

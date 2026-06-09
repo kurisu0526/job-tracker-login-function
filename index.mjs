@@ -14,10 +14,21 @@ export const handler = async (event) => {
             body: JSON.stringify(result)
         };
     } catch (err) {
+        let response = {
+            statusCode: 401
+        };
+        if(err.code === 'LOGIN_FAILED') {
+            response.body = JSON.stringify({
+                message: 'Invalid email or password',
+                details: err.message
+            });
+            return response;
+        }
         return {
             statusCode: 401,
             body: JSON.stringify({
-                message: 'Invalid email or password'
+                message: 'There was a problem logging in. Please try again later.',
+                details: err.message
             })
         };
     }
